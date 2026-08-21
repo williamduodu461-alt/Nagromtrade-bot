@@ -72,21 +72,20 @@ async def leaderboard(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def register(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text("✅ To join:\n1. Click: https://one.exness-track.com/a/nagromtrade\n2. Create trading account\n3. Send your account number to @Nagromtrade")
 
-def run_bot():
+dedef run_bot():
+    import asyncio
     if not BOT_TOKEN:
         print("ERROR: BOT_TOKEN not set in Render Environment!", flush=True)
         return
-    print("Starting Telegram bot polling...", flush=True)
-    application = ApplicationBuilder().token(BOT_TOKEN).build()
-    application.add_handler(CommandHandler("start", start))
-    application.add_handler(CommandHandler("contest", contest))
-    application.add_handler(CommandHandler("leaderboard", leaderboard))
-    application.add_handler(CommandHandler("register", register))
-    application.run_polling()
-    print("Bot polling stopped", flush=True)
-
-if __name__ == '__main__':
-    threading.Thread(target=run_bot, daemon=True).start()
-    port = int(os.environ.get("PORT", 10000))
-    print(f"Starting Flask on port {port}", flush=True)
-    app.run(host='0.0.0.0', port=port)
+    try:
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        print("Starting Telegram bot polling...", flush=True)
+        application = ApplicationBuilder().token(BOT_TOKEN).build()
+        application.add_handler(CommandHandler("start", start))
+        application.add_handler(CommandHandler("contest", contest))
+        application.add_handler(CommandHandler("leaderboard", leaderboard))
+        application.add_handler(CommandHandler("register", register))
+        application.run_polling()
+    except Exception as e:
+        print(f"Bot crashed: {e}", flush=True)
