@@ -4,61 +4,40 @@ from flask import Flask
 from telegram import Update
 from telegram.ext import ApplicationBuilder, CommandHandler, ContextTypes
 
-BOT_TOKEN = os.getenv("BOT_TOKEN")
-
-print(f"BOT_TOKEN exists: {bool(BOT_TOKEN)}", flush=True)
-
+BOT_TOKEN = os.environ.get("BOT_TOKEN")
 app = Flask(__name__)
 
 @app.route('/')
 def home():
     return "Nagromtrade Contest Bot is LIVE!"
 
-WELCOME_TEXT = """
-🏆 *Nagromtrade Trading Contest Bot* 🏆
+WELCOME_TEXT = """🏆 Welcome to Nagromtrade Trading Contest!
 
-Welcome to the Official Nagrom Trade Competition!
+💰 Cash Prizes for Top Traders!
 
-💰 Cash Prizes | 📊 Live Leaderboard
-
-Commands:
-/start - Show this message
-/contest - Contest info & rules
-/leaderboard - View live rankings
+/contest - View contest details
+/leaderboard - See rankings
 /register - How to join
 
-🔗 Register here: https://one.exness-track.com/a/nagromtrade
+Trade with Exness and win!"""
 
-Good luck trader! 📈
-"""
+CONTEST_TEXT = """📊 Nagromtrade Trading Contest
 
-CONTEST_TEXT = """
-📋 *Contest Rules*
+🏅 Prize Pool:
+1st: $500
+2nd: $300
+3rd: $200
+4th-10th: $50 each
 
-1. Register with Exness via our link
-2. Trade and grow your account
-3. Top 3 highest profit % win cash!
+📅 Duration: This Month
+Trade the most profit % to win!
 
-🏅 Prizes:
-1st - $500
-2nd - $300
-3rd - $100
+Use our Exness link to qualify."""
 
-Contest ends monthly. Trade smart!
-"""
-
-LEADERBOARD_TEXT = """
-📊 *Live Leaderboard* (Demo)
-
-1. TraderGH_01 - +125%
-2. AccraFX - +98%
-3. KumasiBull - +76%
-
-Real leaderboard coming soon!
+LEADERBOARD_TEXT = """📈 Real leaderboard coming soon!
 Contact admin @Nagromtrade to update.
 
-Full board: https://one.exness-track.com/a/nagromtrade
-"""
+Full board: https://one.exness-track.com/a/nagromtrade"""
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(WELCOME_TEXT, parse_mode='Markdown')
@@ -67,10 +46,10 @@ async def contest(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(CONTEST_TEXT, parse_mode='Markdown')
 
 async def leaderboard(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text(LEADERBOARD_TEXT, parse_mode='Markdown')
+    await update.message.reply_text(LEADERBOARD_TEXT)
 
 async def register(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text("✅ To join:\n1. Click: https://one.exness-track.com/a/nagromtrade\n2. Create trading account\n3. Send your account number to @Nagromtrade")
+    await update.message.reply_text("✅ To join:\n1. Register via our Exness link\n2. Start trading\n3. Use /leaderboard to check rank!")
 
 def run_bot():
     import asyncio
@@ -87,9 +66,9 @@ def run_bot():
         application.add_handler(CommandHandler("leaderboard", leaderboard))
         application.add_handler(CommandHandler("register", register))
         application.run_polling()
+        print("Bot polling stopped", flush=True)
     except Exception as e:
         print(f"Bot crashed: {e}", flush=True)
-            print("Bot polling stopped", flush=True)
 
 if __name__ == '__main__':
     threading.Thread(target=run_bot, daemon=True).start()
