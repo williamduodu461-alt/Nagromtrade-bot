@@ -89,3 +89,10 @@ def run_bot():
         application.run_polling()
     except Exception as e:
         print(f"Bot crashed: {e}", flush=True)
+            print("Bot polling stopped", flush=True)
+
+if __name__ == '__main__':
+    threading.Thread(target=run_bot, daemon=True).start()
+    port = int(os.environ.get("PORT", 10000))
+    print(f"Starting Flask on port {port}", flush=True)
+    app.run(host='0.0.0.0', port=port)
