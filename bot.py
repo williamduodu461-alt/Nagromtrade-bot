@@ -72,7 +72,7 @@ async def leaderboard(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def register(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text("✅ To join:\n1. Click: https://one.exness-track.com/a/nagromtrade\n2. Create trading account\n3. Send your account number to @Nagromtrade")
 
-dedef run_bot():
+def run_bot():
     import asyncio
     if not BOT_TOKEN:
         print("ERROR: BOT_TOKEN not set in Render Environment!", flush=True)
