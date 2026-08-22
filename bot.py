@@ -9,13 +9,12 @@ PARTNER_LINK = "https://one.exnessonelink.com/a/4gaf9z8m5c"
 TELEGRAM_LINK = "https://t.me/+18142709814"
 TELEGRAM_NUMBER = "+1 814 270 9814"
 LEADERBOARD_FILE = "leaderboard.json"
-LOGO_FILE = "IMG_1161.jpeg"
 
 app = Flask(__name__)
 YOUR_USERNAME = "officialnagrom"
 
 @app.route('/')
-def home(): return "Nagromtrade TME LINK LIVE"
+def home(): return "Nagromtrade FINAL FIXED"
 
 def load_board():
     try:
@@ -38,33 +37,41 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "━━━━━━━━━━━━━━━━━━━━━\n\n"
         "💰 **PRIZE POOL: $500 MONTHLY**\n"
         "🥇 1st: $250 | 🥈 2nd: $150 | 🥉 3rd: $100\n\n"
-        "📌 Create via IB link → Deposit $50 → Join\n\n"
+        "📌 How to Participate:\n"
+        "• Create via our IB link\n"
+        "• Deposit $50 minimum\n"
+        "• Join contest & Trade\n\n"
         "✅ Official Exness IB Partner\n\n"
         "━━━━━━━━━━━━━━━━━━━━━\n"
         f"🔗 IB: {PARTNER_LINK}\n"
         f"📱 Telegram: {TELEGRAM_NUMBER}\n"
         f"🔗 Direct: {TELEGRAM_LINK}\n"
-        f"👤 @{YOUR_USERNAME}\n"
         "━━━━━━━━━━━━━━━━━━━━━\n\n"
         "👇 Choose an option:"
     )
-    try:
-        if os.path.exists(LOGO_FILE):
-            with open(LOGO_FILE, 'rb') as photo:
-                await update.message.reply_photo(photo=photo, caption=text, reply_markup=InlineKeyboardMarkup(keyboard), parse_mode="Markdown")
-                return
-    except: pass
     await update.message.reply_text(text, reply_markup=InlineKeyboardMarkup(keyboard), parse_mode="Markdown", disable_web_page_preview=True)
 
 async def approve(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if str(update.effective_user.id)!=ADMIN_ID: return
-    if not context.args: return
+    if not context.args:
+        await update.message.reply_text("Use: /approve ACCOUNT_NUMBER")
+        return
     acc=context.args[0].strip()
     board=load_board()
+    found=False
     for t in board:
-        if str(t['account'])==acc: t['verified']=True
+        if str(t['account'])==acc:
+            t['verified']=True
+            found=True
     save_board(board)
-    await update.message.reply_text(f"✅ Approved {acc}!")
+    if found:
+        await update.message.reply_text(f"✅ Approved {acc}!")
+        for t in board:
+            if str(t['account'])==acc and t.get('chat_id'):
+                try: await context.bot.send_message(chat_id=t['chat_id'], text=f"🎉 CONGRATS! {acc} APPROVED for Nagrom Contest! Contact {TELEGRAM_LINK}")
+                except: pass
+    else:
+        await update.message.reply_text(f"❌ Not found {acc}")
 
 async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query=update.callback_query
@@ -72,42 +79,64 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     data=query.data
     user=query.from_user
     username = f"@{user.username}" if user.username else "No username"
+
     if data.startswith("admin_approve_"):
         acc=data.replace("admin_approve_","")
         board=load_board()
         for t in board:
             if str(t['account'])==acc: t['verified']=True
         save_board(board)
-        await query.edit_message_text(f"✅ Approved {acc}!")
+        await query.edit_message_text(f"✅ APPROVED {acc}!")
         for t in board:
             if str(t['account'])==acc and t.get('chat_id'):
-                try: await context.bot.send_message(chat_id=t['chat_id'], text=f"✅ APPROVED! {acc} verified! Contact {TELEGRAM_LINK} now.")
+                try: await context.bot.send_message(chat_id=t['chat_id'], text=f"🎉 APPROVED! {acc} is now in contest! Contact {TELEGRAM_LINK}")
                 except: pass
         return
+
     if data=="register":
-        context.user_data['step']='awaiting_exness_id'
-        await query.message.reply_text(f"🚀 Send Exness Account Number via {PARTNER_LINK}:")
+        context.user_data['step']='awaiting_account'
+        context.user_data['reg']={}
+        await query.message.reply_text(
+            "🚀 **JOIN NAGROM CONTEST**\n\n"
+            "To verify you used our IB link, we need:\n\n"
+            "Step 1/3: Send your **Exness Account Number**\n"
+            "Example: 12345678",
+            disable_web_page_preview=True
+        )
         return
+
     if data=="howtostart":
-        chat_buttons=[]
-        if user.username:
-            chat_buttons.append([InlineKeyboardButton(f"💬 Chat {user.first_name}", url=f"https://t.me/{user.username}")])
-        chat_buttons.append([InlineKeyboardButton("📩 Open Chat ID", url=f"tg://user?id={user.id}")])
         try:
-            await context.bot.send_message(chat_id=int(ADMIN_ID), text=f"❓ How do I start? From {user.first_name} {username} ID:{user.id}", reply_markup=InlineKeyboardMarkup(chat_buttons))
+            btns=[]
+            if user.username:
+                btns.append([InlineKeyboardButton(f"💬 Chat {user.first_name}", url=f"https://t.me/{user.username}")])
+            btns.append([InlineKeyboardButton("📩 Open Chat", url=f"tg://user?id={user.id}")])
+            await context.bot.send_message(chat_id=int(ADMIN_ID), text=f"❓ How do I start? From {user.first_name} {username} ID:{user.id}", reply_markup=InlineKeyboardMarkup(btns))
         except: pass
-        await query.message.reply_text(f"📘 HOW TO START:\n1. {PARTNER_LINK}\n2. $50\n3. Join\nAdmin {TELEGRAM_LINK} notified!")
+        await query.message.reply_text(
+            "📘 **HOW TO START - 3 Steps**\n\n"
+            "1️⃣ Create Exness account via IB link below\n"
+            "2️⃣ Deposit **$50 minimum**\n"
+            "3️⃣ Tap 🚀 Join Contest & submit details\n\n"
+            f"🔗 IB Link: {PARTNER_LINK}\n"
+            f"📱 Contact: {TELEGRAM_LINK}\n\n"
+            "Admin will DM you shortly!",
+            disable_web_page_preview=True
+        )
         return
+
     if data=="leaderboard":
         board=load_board()
         verified=[t for t in board if t.get('verified')]
-        txt="🏆 Empty!" if not verified else "🏆 Leaderboard:\n" + "\n".join([f"{i+1}. {t['name']} | {t['account']}" for i,t in enumerate(verified[:10])])
+        if not verified:
+            txt="🏆 **LEADERBOARD**\n\nNo traders yet! Be the first to join the $500 contest!"
+        else:
+            txt="🏆 **NAGROM LEADERBOARD TOP 10** 🏆\n\n" + "\n".join([f"{i+1}. {t['name']} | {t['account']}" for i,t in enumerate(verified[:10])])
         await query.message.reply_text(txt)
+        return
     elif data=="rules":
-        await query.message.reply_text(f"📜 RULES: IB {PARTNER_LINK} Min $50 Contact {TELEGRAM_LINK}")
-    elif data=="manage":
-        context.user_data['step']='awaiting_manage'
-        await query.message.reply_text(f"💼 Send details to {TELEGRAM_LINK}")
+        await query.message.reply_text(f"📜 **RULES:**\n• Must use IB: {PARTNER_LINK}\n• Min $50\n• No cheating\n• Contact: {TELEGRAM_LINK} | {TELEGRAM_NUMBER}")
+        return
 
 async def message_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     chat_id=update.effective_user.id
@@ -115,23 +144,31 @@ async def message_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user=update.effective_user
     uname=f"@{user.username}" if user.username else user.first_name
     step=context.user_data.get('step')
-    if step=='awaiting_exness_id':
-        acc=text
+
+    if step=='awaiting_account':
+        context.user_data['reg']['account']=text
+        context.user_data['step']='awaiting_name'
+        await update.message.reply_text("Step 2/3: Send your **Full Name**\nExample: John Mensah")
+        return
+    if step=='awaiting_name':
+        context.user_data['reg']['name']=text
+        context.user_data['step']='awaiting_phone'
+        await update.message.reply_text("Step 3/3: Send your **Phone / WhatsApp**\nExample: +233XXXXXXXXX")
+        return
+    if step=='awaiting_phone':
+        reg=context.user_data.get('reg',{})
+        reg['phone']=text
         board=load_board()
-        board.append({"name":user.first_name,"account":acc,"profit":0,"balance":0,"verified":False,"telegram":uname,"chat_id":chat_id})
+        new_entry={"account":reg.get('account'),"name":reg.get('name'),"phone":reg.get('phone'),"telegram":uname,"chat_id":chat_id,"verified":False}
+        board.append(new_entry)
         save_board(board)
         context.user_data.clear()
         try:
-            kb=[[InlineKeyboardButton(f"✅ Approve {acc}",callback_data=f"admin_approve_{acc}")],[InlineKeyboardButton(f"💬 Chat {user.first_name}", url=f"https://t.me/{user.username}" if user.username else f"tg://user?id={user.id}")]]
-            await context.bot.send_message(chat_id=int(ADMIN_ID), text=f"🆕 NEW JOIN {user.first_name} {uname} Account {acc} ID {chat_id}", reply_markup=InlineKeyboardMarkup(kb))
+            kb=[[InlineKeyboardButton(f"✅ Approve {new_entry['account']}", callback_data=f"admin_approve_{new_entry['account']}")],[InlineKeyboardButton(f"💬 Chat {new_entry['name']}", url=f"https://t.me/{user.username}" if user.username else f"tg://user?id={user.id}")]]
+            admin_text=(f"🆕 **NEW CONTEST REQUEST**\n\n👤 Name: {new_entry['name']}\n🔢 Account: {new_entry['account']}\n📱 Phone: {new_entry['phone']}\n💬 Telegram: {uname}\n🆔 ID: {chat_id}")
+            await context.bot.send_message(chat_id=int(ADMIN_ID), text=admin_text, reply_markup=InlineKeyboardMarkup(kb))
         except: pass
-        await update.message.reply_text(f"✅ {acc} sent! Contact {TELEGRAM_LINK}")
-        return
-    if step=='awaiting_manage':
-        try: await context.bot.send_message(chat_id=int(ADMIN_ID), text=f"💼 MANAGEMENT {uname}: {text}")
-        except: pass
-        context.user_data.clear()
-        await update.message.reply_text(f"✅ Sent to {TELEGRAM_LINK}")
+        await update.message.reply_text(f"✅ **Request Sent!**\n\nName: {new_entry['name']}\nAccount: {new_entry['account']}\nPhone: {new_entry['phone']}\n\nAdmin will approve shortly.\nContact: {TELEGRAM_LINK}\nNumber: {TELEGRAM_NUMBER}")
         return
 
 application = ApplicationBuilder().token(BOT_TOKEN).build()
