@@ -13,7 +13,7 @@ app = Flask(__name__)
 YOUR_USERNAME = "officialnagrom"
 
 @app.route('/')
-def home(): return "Nagromtrade with LOGO LIVE"
+def home(): return "Nagromtrade AUTO REQUEST LIVE"
 
 def load_board():
     try:
@@ -26,8 +26,9 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     keyboard = [
         [InlineKeyboardButton("🚀 Join Trading Contest", callback_data="register")],
         [InlineKeyboardButton("🏆 Leaderboard", callback_data="leaderboard"), InlineKeyboardButton("📜 Rules", callback_data="rules")],
+        [InlineKeyboardButton("❓ How do I start?", callback_data="howtostart")],
         [InlineKeyboardButton("🔗 Create Exness Account", url=PARTNER_LINK)],
-        [InlineKeyboardButton("💼 Account Management", callback_data="manage"), InlineKeyboardButton("💬 Support", url=f"https://t.me/{YOUR_USERNAME}")]
+        [InlineKeyboardButton("💼 Account Management", callback_data="manage"), InlineKeyboardButton("💬 Contact Admin", url=f"https://t.me/{YOUR_USERNAME}")]
     ]
     text = (
         "🏆 **NAGROM FOREX TRADING CONTEST** 🏆\n"
@@ -36,12 +37,10 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "🥇 1st: $250 | 🥈 2nd: $150 | 🥉 3rd: $100\n\n"
         "📌 **How to Participate:**\n"
         "• Create via our IB link below\n"
-        "• Deposit **$10** minimum\n"
+        "• Deposit **$50** minimum\n"
         "• Trade & climb leaderboard\n\n"
-        "✅ Official Exness IB Partner\n"
-        "📊 Live Ranking | ⚡️ Monthly Payouts\n\n"
+        "✅ Official Exness IB Partner\n\n"
         "━━━━━━━━━━━━━━━━━━━━━\n"
-        f"🔗 {PARTNER_LINK}\n"
         f"👤 @{YOUR_USERNAME}\n"
         "━━━━━━━━━━━━━━━━━━━━━\n\n"
         "👇 Choose an option:"
@@ -64,47 +63,85 @@ async def approve(update: Update, context: ContextTypes.DEFAULT_TYPE):
     for t in board:
         if str(t['account'])==acc:
             t['verified']=True
-            t['balance']=10
+            t['balance']=50
     save_board(board)
     await update.message.reply_text(f"✅ Approved {acc}!")
+    for t in board:
+        if str(t['account'])==acc and t.get('chat_id'):
+            try: 
+                await context.bot.send_message(
+                    chat_id=t['chat_id'], 
+                    text=f"✅ **APPROVED!**\n\nYour account {acc} is verified under our IB!\n\nYou are now in leaderboard 🏆\n\nYou can now contact admin @{YOUR_USERNAME} for trading & payouts.",
+                    parse_mode="Markdown"
+                )
+            except: pass
 
 async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query=update.callback_query
     await query.answer()
     data=query.data
+    user=query.from_user
+
     if data.startswith("admin_approve_"):
         acc=data.replace("admin_approve_","")
         board=load_board()
         for t in board:
             if str(t['account'])==acc:
                 t['verified']=True
-                t['balance']=10
+                t['balance']=50
         save_board(board)
-        await query.edit_message_text(f"✅ Approved {acc} - Added!")
+        await query.edit_message_text(f"✅ Approved {acc} - User notified!")
+        for t in board:
+            if str(t['account'])==acc and t.get('chat_id'):
+                try:
+                    await context.bot.send_message(chat_id=t['chat_id'], text=f"✅ APPROVED! Your account {acc} verified! Contact @{YOUR_USERNAME} now.")
+                except: pass
         return
+
     if data=="register":
         context.user_data['step']='awaiting_exness_id'
-        await query.message.reply_text(f"🚀 **JOIN CONTEST**\n\nSend your Exness Account Number\nMust be via our IB link\n\nNo account? {PARTNER_LINK}\n\nNow send number:", disable_web_page_preview=True)
+        await query.message.reply_text(f"🚀 **JOIN CONTEST**\n\nSend your Exness Account Number\nMust be via our IB link:\n{PARTNER_LINK}\n\nNow send number:", disable_web_page_preview=True)
+
+    elif data=="howtostart":
+        # THIS SENDS DIRECTLY TO YOU
+        try:
+            await context.bot.send_message(
+                chat_id=int(ADMIN_ID),
+                text=f"❓ NEW QUESTION: How do I start?\n\nFrom: {user.first_name} @{user.username if user.username else 'NoUsername'} (ID: {user.id})\n\nUser clicked 'How do I start?' button"
+            )
+        except: pass
+        await query.message.reply_text(
+            "📘 **HOW TO START - NAGROM FOREX**\n"
+            "━━━━━━━━━━━━━\n\n"
+            "1️⃣ Create Exness account via our IB link:\n"
+            f"{PARTNER_LINK}\n\n"
+            "2️⃣ Verify & Deposit $50 minimum\n\n"
+            "3️⃣ Click 🚀 Join Trading Contest & send your account number\n\n"
+            "4️⃣ Wait for admin approval (we check if under our IB)\n\n"
+            "5️⃣ After approval, you can contact admin & start trading\n\n"
+            "6️⃣ Trade & climb leaderboard to win $500 monthly!\n\n"
+            f"Need help? Contact @{YOUR_USERNAME}\n\n"
+            "Your question has been sent to admin directly!",
+            disable_web_page_preview=True
+        )
+
     elif data=="leaderboard":
         board=load_board()
         verified=[t for t in board if t.get('verified')]
         if not verified:
-            txt="🏆 **LEADERBOARD - $50+ Verified**\n━━━━━━━━━━━━━\n\nEmpty! Be first!\n1. Create via IB link\n2. Deposit $50"
+            txt="🏆 **LEADERBOARD**\n━━━━━━━━━━━━━\n\nEmpty! Be first!"
         else:
             verified.sort(key=lambda x:x.get('profit',0), reverse=True)
-            txt="🏆 **NAGROM FOREX LEADERBOARD**\n━━━━━━━━━━━━━\n\n"
-            medals=["🥇","🥈","🥉"]
+            txt="🏆 **LEADERBOARD**\n━━━━━━━━━━━━━\n\n"
             for i,t in enumerate(verified[:10],1):
-                medal=medals[i-1] if i<=3 else f"{i}."
+                medal=["🥇","🥈","🥉"][i-1] if i<=3 else f"{i}."
                 txt+=f"{medal} {t['name']} | {t['account']} | {t['profit']}%\n"
-            txt+="\n━━━━━━━━━━━━━\nOnly $50+ verified"
         await query.message.reply_text(txt, parse_mode="Markdown")
     elif data=="rules":
-        txt=f"📜 **CONTEST RULES**\n━━━━━━━━━━━━━\n\n1️⃣ Must be under our IB\n{PARTNER_LINK}\n\n2️⃣ Min deposit $50\n\n3️⃣ No cheating\n\n4️⃣ Winners 1st of month\n\n5️⃣ Prize: USDT / MoMo\n\nSupport: @{YOUR_USERNAME}"
-        await query.message.reply_text(txt, disable_web_page_preview=True)
+        await query.message.reply_text(f"📜 **RULES**\n1️⃣ Must be under IB\n{PARTNER_LINK}\n2️⃣ Min $50\n3️⃣ Monthly winners\nSupport @{YOUR_USERNAME}", disable_web_page_preview=True)
     elif data=="manage":
         context.user_data['step']='awaiting_manage'
-        await query.message.reply_text(f"💼 **ACCOUNT MANAGEMENT**\n━━━━━━━━━━━━━\n\nWe manage & grow your account.\nProfit share after success.\n\n⚠️ Risky\n\nSend:\n• Account Number\n• Investor Password\n• Server\n• WhatsApp\n\nDM: @{YOUR_USERNAME}")
+        await query.message.reply_text(f"💼 **ACCOUNT MANAGEMENT**\nSend: Account, Investor Password, Server, WhatsApp\nDM @{YOUR_USERNAME}")
 
 async def message_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     chat_id=update.effective_user.id
@@ -112,34 +149,41 @@ async def message_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user=update.effective_user
     uname=f"@{user.username}" if user.username else user.first_name
     step=context.user_data.get('step')
+
     if step=='awaiting_exness_id':
-        context.user_data['account']=text
-        context.user_data['step']='awaiting_proof'
-        await update.message.reply_text(f"✅ Account: {text}\n\nNow send proof of $50 deposit.")
-        return
-    if step=='awaiting_proof':
-        acc=context.user_data.get('account','Unknown')
+        acc=text
         board=load_board()
-        board.append({"name":user.first_name,"account":acc,"profit":0,"balance":0,"verified":False,"telegram":uname,"chat_id":chat_id,"proof":text})
+        board.append({"name":user.first_name,"account":acc,"profit":0,"balance":0,"verified":False,"telegram":uname,"chat_id":chat_id})
         save_board(board)
         context.user_data.clear()
+        # AUTO SEND REQUEST TO YOU - NO CONTACT BEFORE APPROVAL
         try:
             kb=[[InlineKeyboardButton(f"✅ Approve {acc}",callback_data=f"admin_approve_{acc}")]]
-            await context.bot.send_message(chat_id=int(ADMIN_ID), text=f"🆕 NEW JOIN - VERIFY $50\n\nName: {user.first_name} {uname}\nAccount: {acc}\nProof: {text}\nChat: {chat_id}\n\nCheck Exness PA, then /approve {acc}", reply_markup=InlineKeyboardMarkup(kb))
-        except: pass
-        await update.message.reply_text(f"⏳ Pending! Account {acc} sent to @{YOUR_USERNAME}")
+            await context.bot.send_message(
+                chat_id=int(ADMIN_ID), 
+                text=f"🆕 **NEW JOIN REQUEST - AUTO**\n\n👤 Name: {user.first_name} {uname}\n💳 Account: {acc}\n🆔 Chat ID: {chat_id}\n\n⚠️ Check in Exness PA if account is under your IB link & has $50\n\nTap Approve to verify user.",
+                reply_markup=InlineKeyboardMarkup(kb)
+            )
+        except Exception as e:
+            print(f"Admin fail: {e}")
+
+        await update.message.reply_text(
+            f"✅ **Account {acc} Received!**\n\n"
+            f"⏳ Request automatically sent to admin for verification.\n\n"
+            f"Please wait — admin will verify if your account is under our IB: {PARTNER_LINK}\n\n"
+            f"After approval, you will be notified & can contact admin @{YOUR_USERNAME}.\n\n"
+            f"❓ Click 'How do I start?' for guide.",
+            disable_web_page_preview=True
+        )
         return
+
     if step=='awaiting_manage':
         try:
-            await context.bot.send_message(chat_id=int(ADMIN_ID), text=f"💼 MANAGEMENT LEAD\nFrom: {user.first_name} {uname} ({chat_id})\n\n{text}")
+            await context.bot.send_message(chat_id=int(ADMIN_ID), text=f"💼 MANAGEMENT\nFrom: {user.first_name} {uname} ({chat_id})\n\n{text}")
         except: pass
         context.user_data.clear()
         await update.message.reply_text(f"✅ Sent to @{YOUR_USERNAME}")
         return
-    if str(chat_id)!=ADMIN_ID and text:
-        try:
-            await context.bot.send_message(chat_id=int(ADMIN_ID), text=f"📩 {user.first_name} {uname}: {text}")
-        except: pass
 
 application = ApplicationBuilder().token(BOT_TOKEN).build()
 application.add_handler(CommandHandler("start", start))
